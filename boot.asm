@@ -3,8 +3,10 @@ org 0x7c00
 
 ; На данный момент нельзя размещать строку в определенной секции, иначе почемуто процессор не может получить к этому участку памяти доступ
 ; Сейчас строка определена в той же секции что и код програмы.
-mesage db "Hello world!", 0
-
+string1 db "Some string1", 0
+string2 db "Some string2", 0
+TrueStrMsg db "This strings is equals", 0
+FalseStrMsg db "This strings is not equals", 0
 
 section .text
 global _start
@@ -16,8 +18,31 @@ _start:
     mov es, ax ; Устанавливаем значение сегментного регистра ES(Extention segment) расширенный сегмент данных
 
     mov ah, 0x0e  ; Указываем режим работы BIOS с экраном монитора (он подерживает разные графические и текстовые режимы работы) 
-    mov si, mesage ; Копируем в регистр si (source index индекс источника) адрес начала строки - метка является адресом на начало строки
-    jmp print_str ; Прыгаем на указанную метку
+
+
+    mov si, string1
+    mov di, string2
+    jmp compare_str
+
+output_result:
+    jmp print_true_message
+    ;cmp ax, 0
+    ;jne print_true_message
+    ;jmp print_false_message
+
+
+
+print_true_message:
+    mov si, TrueStrMsg
+    jmp print_str
+    jmp main_loop
+
+print_false_message:
+    mov si, FalseStrMsg
+    jmp print_str
+    jmp main_loop
+
+
 
 print_str: ; Процедура вывода строки на экран средствами BIOS
     print_cur_char_in_si_if_not_zero:
@@ -27,6 +52,35 @@ print_str: ; Процедура вывода строки на экран сре
         int 0x10 ; Иначе выводим указанный символ в al
         inc si ; Инкрементив указатель в регистре si на следующий байт
         jmp print_cur_char_in_si_if_not_zero    ; Прыгаем на начало цикла для вывода на экран следующего (уже текущего) символа строки
+
+
+
+
+; Почему то не работает нормально, хотя по логике все должно работать корректно!!!
+compare_str:
+    ; Сигнатура: compare_str(string* str1=si, string* str2=di) int (ax=0 - False, ax=1 - True)
+    compare_iter:
+        mov ch, [si]
+        mov dh, [di]
+        cmp ch, dh
+        jne not_equal
+
+        cmp ch, 0
+        je zero_equal
+
+        inc si
+        inc di
+        jmp compare_iter
+
+    not_equal:
+        mov ax, 0
+        jmp output_result
+    
+    zero_equal:
+        cmp dh, 0
+        jne not_equal
+        mov ax, 1
+        jmp output_result
 
 main_loop:
     jmp main_loop   ; $ - Указатель на текущую инструкцию, данная конструкция означает вечный цикл  
