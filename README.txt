@@ -1,0 +1,1 @@
+Введение в защищенный режим: http://sasm.narod.ru/docs/pm/pm_in/main.htm
