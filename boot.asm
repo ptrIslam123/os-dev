@@ -73,10 +73,34 @@ protection_mode_entry_point:
 
     jmp kmain
  
- kmain:   
+ kmain:  
+    ; Запись начала адреса видео памяти в регист edi
+    mov edi, 0xB8000 
+    mov esi, message    
+    jmp print_str_in_pmode
+
+print_str_in_pmode:
+    ; Процесс вывода строки приветствия очень простой. Мы записываем в память итеративно сначало код выводимого символа(1 байт) а затем вторым 
+    ; атрибуты символа(тоже 1 байт: 4 бита - цвет фона, 4 бита - цвет сивола).
+    mov al, [esi]
+    cmp al, 0
+    je exit
+
+    mov [edi], al
+    inc edi
+    inc esi
+    mov al, 7
+    mov [edi], al
+    inc edi
+    jmp print_str_in_pmode
+
+exit:
     cli
     hlt
-    
+
+
+; Message-printing loop
+message: db "Hello world from My OS in Protected mode!", 0
 
 ; Выравнивание по границе 8 байт для ускорения доступа к таблице
 align 8
@@ -137,6 +161,6 @@ gdt_entry:
     dd gdt_begin
 
 signatura_for_BIOS:
-    times 510-signatura_for_BIOS +__start db 0
+    times 510 - ($ - $$) db 0 
     db 55h, 0AAh
 
