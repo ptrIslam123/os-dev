@@ -242,7 +242,8 @@ NULL_SEG_DESCRIPTOR db 8 dup(0)
 
 ; Описание дескриптора сегмента кода   
 CODE_SEG_DESCRIPTOR:
-    dw 0xFFFF           ; Limit[0:15]   db 0x00, 0x00, 0x00 ; Base[0:23]
+    dw 0xFFFF           ; Limit[0:15]
+    db 0x00, 0x00, 0x00 ; Base[0:23]
     db 10011010b        ; P DPL[0:1] S Type[0:3]
     db 11001111b        ; G D/B L AVL Limit[16:19]
     db 0x00             ; Base[24:31]
@@ -279,7 +280,7 @@ DATA_SEG_DESCRIPTOR:
     ; L     = 0          - 64-bit code segment: in protected mode this bit is always zero
     ; AVL   = 0          - available: it's up to the programmer how to use this bit
 
-; Вычисляем размер таблицы дескрипторов
+; Вычисляем размер таблицы дескрипторов: текущий адрсе ($) - адрес начала дескрипторной таблицы(gdt) = размер (разница в адресах).
 gdt_size equ $ - gdt
 
 ; GDT  используется процессором всё время, пока он находится в защищённом режиме. Параметры GDT хранятся в специальном 48-разрядном регистре GDTR
