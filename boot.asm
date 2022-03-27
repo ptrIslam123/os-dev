@@ -1,36 +1,76 @@
-bits 16
+use16
 org 0x7c00
 
-; На данный момент нельзя размещать строку в определенной секции, иначе почемуто процессор не может получить к этому участку памяти доступ
-; Сейчас строка определена в той же секции что и код програмы.
-mesage db "Hello world!", 0
 
+primary_msg: db "============ Start OS ============", 0
+other_msg: db "Hello world in my OS!", 0
 
-section .text
-global _start
 
 _start:
 
-    xor ax, ax ; Зануляем регист
-    mov ds, ax ; Устанавливаем значение сегментного регистра DS(Data segment) сегмент данных
-    mov es, ax ; Устанавливаем значение сегментного регистра ES(Extention segment) расширенный сегмент данных
+xor ax, ax
+mov ds, ax
+mov es, ax
+mov bp, 0x9000
+mov sp, bp
 
-    mov ah, 0x0e  ; Указываем режим работы BIOS с экраном монитора (он подерживает разные графические и текстовые режимы работы) 
-    mov si, mesage ; Копируем в регистр si (source index индекс источника) адрес начала строки - метка является адресом на начало строки
-    jmp print_str ; Прыгаем на указанную метку
+mov ah, 0x0e 
 
-print_str: ; Процедура вывода строки на экран средствами BIOS
-    print_cur_char_in_si_if_not_zero:
-        mov al, [si] ; В регист al кладем разыменованный адрес, который хранится в регистре si (текущий символ строки байт)
-        cmp al, 0 ;  Если значение этого байта равно 0
-        je main_loop ; Прыгаем на указанную метку
-        int 0x10 ; Иначе выводим указанный символ в al
-        inc si ; Инкрементив указатель в регистре si на следующий байт
-        jmp print_cur_char_in_si_if_not_zero    ; Прыгаем на начало цикла для вывода на экран следующего (уже текущего) символа строки
+mov si, primary_msg
+call strlen
+
+mov si, primary_msg
+mov di, dx 
+call print
+
+mov si, other_msg
+mov di, 22
+call print
 
 main_loop:
     jmp main_loop   ; $ - Указатель на текущую инструкцию, данная конструкция означает вечный цикл  
 
+
+; print(*message : si, len : di) -> void
+print:
+    push bp
+    mov bp, sp
+    .print_iter:
+        mov al, [si]
+        cmp di, 0
+        je .exit
+
+        int 0x10
+        inc si
+        dec di
+        jmp .print_iter
+
+
+    .exit:
+        mov sp, bp
+        pop bp
+        ret
+    
+; str_len(*str : si) -> len : dx
+strlen:
+    push bp
+    mov bp, sp
+    
+    xor dx, dx
+    .strlen_iter:
+        mov al, [si]
+        cmp al, 0
+        je .exit
+
+        inc si
+        inc dx
+        jmp .strlen_iter
+
+    .exit:
+        mov sp, bp
+        pop bp
+        ret
+    
 
 times 510 - ($ - $$) db 0 ; Заполняем оставшуюся память в программе (в секторе 512 байт) 0-ми
 
